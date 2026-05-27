@@ -72,13 +72,13 @@ export default function EnrollmentPage() {
     return (
       <div className="p-6 max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-2"><ClipboardList size={24} className="text-[#0D6E6E]" />My Enrollment</h1>
-        <p className="text-gray-500 text-sm mb-6">View your enrolled courses and apply for new ones</p>
+        <p className="text-gray-700 text-sm mb-6">View your enrolled courses and apply for new ones</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Available courses */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-bold text-gray-800 mb-4">Available Courses</h2>
-            {offerings.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">No published offerings.</p> : (
+            {offerings.length === 0 ? <p className="text-sm text-gray-600 text-center py-8">No published offerings.</p> : (
               <div className="space-y-2">
                 {offerings.map((o) => {
                   const already = myEnrollments.some((e) => e.offering_id === o.id);
@@ -86,7 +86,7 @@ export default function EnrollmentPage() {
                     <div key={o.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                       <div className="flex-1">
                         <p className="text-sm font-bold text-[#0D6E6E]">{o.course_number} <span className="text-gray-800 font-semibold">{o.course_title}</span></p>
-                        <p className="text-xs text-gray-500">{o.credit_structure} credits · {o.enrolled_count}/{o.max_enrollment} enrolled</p>
+                        <p className="text-xs text-gray-700">{o.credit_structure} credits · {o.enrolled_count}/{o.max_enrollment} enrolled</p>
                       </div>
                       <button disabled={already || enroll.isPending} onClick={() => enroll.mutate(o.id)}
                         className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0D6E6E] text-white hover:bg-[#178F8F] disabled:opacity-50">
@@ -102,15 +102,15 @@ export default function EnrollmentPage() {
           {/* My enrollments */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-bold text-gray-800 mb-4">My Enrollments</h2>
-            {myLoading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-gray-400" /></div> : myEnrollments.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No enrollments yet.</p>
+            {myLoading ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-gray-600" /></div> : myEnrollments.length === 0 ? (
+              <p className="text-sm text-gray-600 text-center py-8">No enrollments yet.</p>
             ) : (
               <div className="space-y-2">
                 {myEnrollments.map((e) => (
                   <div key={e.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                     <div className="flex-1">
                       <p className="text-sm font-bold text-gray-800">{e.course_number} {e.course_title}</p>
-                      <p className="text-xs text-gray-500">{e.credit_structure} credits</p>
+                      <p className="text-xs text-gray-700">{e.credit_structure} credits</p>
                       {e.remarks && <p className="text-xs text-amber-600 mt-1">{e.remarks}</p>}
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[e.status] ?? "bg-gray-100"}`}>{e.status}</span>
@@ -128,7 +128,7 @@ export default function EnrollmentPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-2"><ClipboardList size={24} className="text-[#0D6E6E]" />Enrollment Management</h1>
-      <p className="text-gray-500 text-sm mb-6">Review and approve student enrollment requests</p>
+      <p className="text-gray-700 text-sm mb-6">Review and approve student enrollment requests</p>
 
       <div className="flex gap-3 mb-5">
         <select value={selectedOffering} onChange={(e) => setSelectedOffering(e.target.value)}
@@ -151,7 +151,7 @@ export default function EnrollmentPage() {
       {selectedOffering ? (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {enrollments.length === 0 ? (
-            <div className="text-center py-16 text-gray-400"><ClipboardList size={40} className="mx-auto mb-3 opacity-30" /><p>No {statusFilter} enrollments.</p></div>
+            <div className="text-center py-16 text-gray-600"><ClipboardList size={40} className="mx-auto mb-3 opacity-30" /><p>No {statusFilter} enrollments.</p></div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -164,9 +164,9 @@ export default function EnrollmentPage() {
                   <tr key={e.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
                     <td className="px-4 py-3 font-medium">{e.student_name}</td>
                     <td className="px-4 py-3 font-mono text-xs">{e.student_roll || "—"}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{new Date(e.enrolled_at).toLocaleDateString("en-IN")}</td>
+                    <td className="px-4 py-3 text-gray-700 text-xs">{new Date(e.enrolled_at).toLocaleDateString("en-IN")}</td>
                     <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[e.status] ?? ""}`}>{e.status}</span></td>
-                    <td className="px-4 py-3 text-gray-500 text-xs max-w-[150px] truncate">{e.remarks ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-700 text-xs max-w-[150px] truncate">{e.remarks ?? "—"}</td>
                     <td className="px-4 py-3">
                       {e.status === "pending" && (
                         <div className="flex gap-2">
@@ -184,7 +184,7 @@ export default function EnrollmentPage() {
           )}
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-200">
+        <div className="text-center py-16 text-gray-600 bg-white rounded-2xl border border-gray-200">
           <ClipboardList size={40} className="mx-auto mb-3 opacity-30" />
           <p>Select a course offering to manage enrollments.</p>
         </div>

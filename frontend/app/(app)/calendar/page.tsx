@@ -57,14 +57,14 @@ export default function CalendarPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["ams-calendars"] }); qc.invalidateQueries({ queryKey: ["ams-semesters", expanded] }); },
   });
 
-  if (isLoading) return <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 className="animate-spin mr-2" />Loading…</div>;
+  if (isLoading) return <div className="flex items-center justify-center py-24 text-gray-600"><Loader2 className="animate-spin mr-2" />Loading…</div>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><CalendarDays size={24} className="text-[#0D6E6E]" />Academic Calendar</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage academic sessions, semesters, and key dates</p>
+          <p className="text-gray-700 text-sm mt-1">Manage academic sessions, semesters, and key dates</p>
         </div>
         {isAdmin && (
           <button onClick={() => setShowCreate(true)}
@@ -102,14 +102,14 @@ export default function CalendarPage() {
 
       {/* Calendars List */}
       <div className="space-y-3">
-        {calendars.length === 0 && <div className="text-center py-16 text-gray-400"><CalendarDays size={40} className="mx-auto mb-3 opacity-30" /><p>No academic calendars yet.</p></div>}
+        {calendars.length === 0 && <div className="text-center py-16 text-gray-600"><CalendarDays size={40} className="mx-auto mb-3 opacity-30" /><p>No academic calendars yet.</p></div>}
         {calendars.map((cal) => (
           <div key={cal.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpanded((e) => e === cal.id ? null : cal.id)}>
-              {expanded === cal.id ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
+              {expanded === cal.id ? <ChevronDown size={16} className="text-gray-600" /> : <ChevronRight size={16} className="text-gray-600" />}
               <div className="flex-1">
                 <h3 className="font-bold text-gray-900">{cal.name}</h3>
-                <p className="text-sm text-gray-500">{formatDate(cal.start_date, "short")} – {formatDate(cal.end_date, "short")}</p>
+                <p className="text-sm text-gray-700">{formatDate(cal.start_date, "short")} – {formatDate(cal.end_date, "short")}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[cal.status] ?? "bg-gray-100"}`}>{cal.status}</span>
               {isAdmin && (
@@ -160,7 +160,7 @@ export default function CalendarPage() {
                       <BookOpen size={15} className="text-[#0D6E6E] shrink-0" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-800">{sem.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-700">
                           {formatDate(sem.start_date, "short")} – {formatDate(sem.end_date, "short")}
                           {sem.exam_start && ` · Exam: ${formatDate(sem.exam_start, "short")}`}
                           {sem.result_declaration && ` · Results: ${formatDate(sem.result_declaration, "short")}`}
@@ -176,7 +176,7 @@ export default function CalendarPage() {
                     </div>
                   ))}
                   {semesters.filter((s) => s.calendar_id === cal.id).length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-4">No semesters added yet.</p>
+                    <p className="text-xs text-gray-600 text-center py-4">No semesters added yet.</p>
                   )}
                 </div>
               </div>

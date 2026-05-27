@@ -57,14 +57,14 @@ export default function ResearchPage() {
     onSuccess: () => { toast.success("Committee locked."); qc.invalidateQueries({ queryKey: ["ams-committees"] }); setSelectedCommittee(null); },
   });
 
-  if (isLoading) return <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 className="animate-spin mr-2" />Loading…</div>;
+  if (isLoading) return <div className="flex items-center justify-center py-24 text-gray-600"><Loader2 className="animate-spin mr-2" />Loading…</div>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><FlaskConical size={24} className="text-[#0D6E6E]" />PG / Research Management</h1>
-          <p className="text-gray-500 text-sm mt-1">Advisory committees for PG & PhD students</p>
+          <p className="text-gray-700 text-sm mt-1">Advisory committees for PG & PhD students</p>
         </div>
         {isAdmin && <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#0D6E6E] text-white rounded-xl font-semibold text-sm hover:bg-[#178F8F]">
@@ -111,7 +111,7 @@ export default function ResearchPage() {
       {/* Committee list */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {committees.length === 0 && (
-          <div className="col-span-2 text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-200">
+          <div className="col-span-2 text-center py-16 text-gray-600 bg-white rounded-2xl border border-gray-200">
             <FlaskConical size={40} className="mx-auto mb-3 opacity-30" /><p>No advisory committees yet.</p>
           </div>
         )}
@@ -120,7 +120,7 @@ export default function ResearchPage() {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="font-bold text-gray-900">{c.student_name}</p>
-                {c.student_roll && <p className="text-xs text-gray-500 font-mono">{c.student_roll}</p>}
+                {c.student_roll && <p className="text-xs text-gray-700 font-mono">{c.student_roll}</p>}
               </div>
               <div className="flex items-center gap-2">
                 {c.is_locked && <Lock size={14} className="text-amber-600" />}
@@ -128,7 +128,7 @@ export default function ResearchPage() {
               </div>
             </div>
             {c.research_title && <p className="text-sm font-medium text-gray-700 mb-1">{c.research_title}</p>}
-            {c.research_area && <p className="text-xs text-gray-500 mb-3">{c.research_area}</p>}
+            {c.research_area && <p className="text-xs text-gray-700 mb-3">{c.research_area}</p>}
 
             <div className="space-y-1.5 mb-3">
               {c.members.map((m) => (
@@ -139,7 +139,7 @@ export default function ResearchPage() {
                   {m.accepted === false && <span className="text-xs text-red-500">✗ Declined</span>}
                 </div>
               ))}
-              {c.members.length === 0 && <p className="text-xs text-gray-400">No members yet.</p>}
+              {c.members.length === 0 && <p className="text-xs text-gray-600">No members yet.</p>}
             </div>
 
             {isAdmin && !c.is_locked && (

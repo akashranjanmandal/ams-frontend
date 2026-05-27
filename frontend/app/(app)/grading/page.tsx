@@ -84,7 +84,7 @@ export default function GradingPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><BarChart3 size={24} className="text-[#0D6E6E]" />Grading & Results</h1>
-          <p className="text-gray-500 text-sm mt-1">Grade sheets, tabulation, GPA/CGPA, and multi-stage approval</p>
+          <p className="text-gray-700 text-sm mt-1">Grade sheets, tabulation, GPA/CGPA, and multi-stage approval</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default function GradingPage() {
           {GRADE_SCALE.map((g) => (
             <div key={g.grade} className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 rounded-lg text-xs">
               <span className="font-bold text-[#0D6E6E]">{g.grade}</span>
-              <span className="text-gray-500">{g.pts}pts ({g.range}%)</span>
+              <span className="text-gray-700">{g.pts}pts ({g.range}%)</span>
             </div>
           ))}
         </div>
@@ -120,7 +120,7 @@ export default function GradingPage() {
       {selectedOffering && !selectedSheet && (
         <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
           <p className="font-semibold text-gray-700 mb-3">Grade Sheets</p>
-          {sheets.length === 0 ? <p className="text-sm text-gray-400">No sheets created yet. Create one above.</p> : (
+          {sheets.length === 0 ? <p className="text-sm text-gray-600">No sheets created yet. Create one above.</p> : (
             <div className="space-y-2">
               {sheets.map((s) => (
                 <div key={s.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-[#E6F4F4] transition-colors" onClick={() => loadSheet(s.id)}>
@@ -128,7 +128,7 @@ export default function GradingPage() {
                     <p className="text-sm font-semibold capitalize">{s.sheet_type} Grade Sheet</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[s.status] ?? ""}`}>{s.status}</span>
-                  {s.is_locked && <Lock size={13} className="text-gray-400" />}
+                  {s.is_locked && <Lock size={13} className="text-gray-600" />}
                   <span className="text-xs text-[#0D6E6E]">Open →</span>
                 </div>
               ))}
@@ -144,7 +144,7 @@ export default function GradingPage() {
             <button onClick={() => setSelectedSheet(null)} className="text-[#0D6E6E] hover:underline text-sm">← Back</button>
             <h2 className="font-bold text-gray-900 flex-1">{selectedSheet.course_title} — {selectedSheet.sheet_type} Sheet</h2>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[selectedSheet.status] ?? ""}`}>{selectedSheet.status}</span>
-            {selectedSheet.is_locked && <Lock size={14} className="text-gray-400" />}
+            {selectedSheet.is_locked && <Lock size={14} className="text-gray-600" />}
           </div>
 
           {/* Grade entries table */}
@@ -220,7 +220,7 @@ export default function GradingPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold capitalize">{a.role_required.replace("_", " ")}</p>
-                    {a.approver_name && <p className="text-xs text-gray-500">{a.approver_name} · {a.signed_at ? new Date(a.signed_at).toLocaleString("en-IN") : ""}</p>}
+                    {a.approver_name && <p className="text-xs text-gray-700">{a.approver_name} · {a.signed_at ? new Date(a.signed_at).toLocaleString("en-IN") : ""}</p>}
                     {a.remarks && <p className="text-xs text-red-600">Remarks: {a.remarks}</p>}
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLOR[a.status] ?? "bg-gray-100 text-gray-600"}`}>{a.status}</span>

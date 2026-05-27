@@ -32,13 +32,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D6E6E] to-[#1a8a8a] p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-gray-900">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-[#0D6E6E] flex items-center justify-center mb-4">
             <GraduationCap size={32} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">AVFU AMS</h1>
-          <p className="text-gray-500 text-sm mt-1">Academic Management System</p>
+          <p className="text-gray-700 text-sm mt-1">Academic Management System</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -51,7 +51,7 @@ export default function CoursesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><BookOpen size={24} className="text-[#0D6E6E]" />Courses</h1>
-          <p className="text-gray-500 text-sm mt-1">Course catalog, credit structures, and semester offerings</p>
+          <p className="text-gray-700 text-sm mt-1">Course catalog, credit structures, and semester offerings</p>
         </div>
         {isAdmin && tab === "courses" && (
           <button onClick={() => setShowCreate(true)}
@@ -74,7 +74,7 @@ export default function CoursesPage() {
       {/* Filters */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-xs">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search courses…"
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E]" />
         </div>
@@ -117,7 +117,7 @@ export default function CoursesPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Credit Format</label>
-                <p className="text-xs text-gray-500 mb-2">Supported: {CREDIT_FORMATS.join(", ")}</p>
+                <p className="text-xs text-gray-700 mb-2">Supported: {CREDIT_FORMATS.join(", ")}</p>
                 <p className="text-sm font-bold text-[#0D6E6E]">Current: {form.credit_theory}+{form.credit_practical}</p>
               </div>
               <div>
@@ -147,9 +147,9 @@ export default function CoursesPage() {
       {tab === "courses" && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin mr-2" />Loading…</div>
+            <div className="flex items-center justify-center py-16 text-gray-600"><Loader2 className="animate-spin mr-2" />Loading…</div>
           ) : filteredCourses.length === 0 ? (
-            <div className="text-center py-16 text-gray-400"><BookOpen size={40} className="mx-auto mb-3 opacity-30" /><p>No courses found.</p></div>
+            <div className="text-center py-16 text-gray-600"><BookOpen size={40} className="mx-auto mb-3 opacity-30" /><p>No courses found.</p></div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -178,7 +178,7 @@ export default function CoursesPage() {
       {tab === "offerings" && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {offerings.length === 0 ? (
-            <div className="text-center py-16 text-gray-400"><BookOpen size={40} className="mx-auto mb-3 opacity-30" /><p>No offerings yet.</p></div>
+            <div className="text-center py-16 text-gray-600"><BookOpen size={40} className="mx-auto mb-3 opacity-30" /><p>No offerings yet.</p></div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">

@@ -28,7 +28,7 @@ export default function DashboardPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.full_name?.split(" ")[0]}!</h1>
-        <p className="text-gray-500 mt-1">{ROLES[role as keyof typeof ROLES] ?? role} · AVFU Academic Management System</p>
+        <p className="text-gray-700 mt-1">{ROLES[role as keyof typeof ROLES] ?? role} · AVFU Academic Management System</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -39,7 +39,7 @@ export default function DashboardPage() {
               <card.icon size={22} />
             </div>
             <h3 className="font-bold text-gray-900 group-hover:text-[#0D6E6E] transition-colors">{card.label}</h3>
-            <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
+            <p className="text-sm text-gray-700 mt-1">{card.desc}</p>
           </Link>
         ))}
       </div>
@@ -48,10 +48,10 @@ export default function DashboardPage() {
       <div className="mt-8 bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-bold text-gray-800 mb-3">Your Profile</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div><p className="text-gray-500">Name</p><p className="font-semibold">{user?.full_name}</p></div>
-          <div><p className="text-gray-500">Role</p><p className="font-semibold">{ROLES[role as keyof typeof ROLES] ?? role}</p></div>
-          <div><p className="text-gray-500">Email</p><p className="font-semibold truncate">{user?.email}</p></div>
-          <div><p className="text-gray-500">Designation</p><p className="font-semibold">{user?.designation ?? "—"}</p></div>
+          <div><p className="text-gray-700">Name</p><p className="font-semibold">{user?.full_name}</p></div>
+          <div><p className="text-gray-700">Role</p><p className="font-semibold">{ROLES[role as keyof typeof ROLES] ?? role}</p></div>
+          <div><p className="text-gray-700">Email</p><p className="font-semibold truncate">{user?.email}</p></div>
+          <div><p className="text-gray-700">Designation</p><p className="font-semibold">{user?.designation ?? "—"}</p></div>
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!mounted || !isLoggedIn) return null;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#F5F7FA] text-gray-900">
       <AMSSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <main className={cn("transition-all duration-200 min-h-screen", collapsed ? "ml-16" : "ml-[220px]")}>
         {children}

@@ -38,8 +38,8 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {isLoading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-400" /></div> : notifications.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-200">
+      {isLoading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-600" /></div> : notifications.length === 0 ? (
+        <div className="text-center py-16 text-gray-600 bg-white rounded-2xl border border-gray-200">
           <Bell size={40} className="mx-auto mb-3 opacity-30" /><p>No notifications.</p>
         </div>
       ) : (
@@ -53,7 +53,7 @@ export default function NotificationsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${TYPE_COLOR[n.type] ?? "bg-gray-100 text-gray-600"}`}>{n.type}</span>
-                    <span className="text-xs text-gray-400">{formatDate(n.created_at, "relative")}</span>
+                    <span className="text-xs text-gray-600">{formatDate(n.created_at, "relative")}</span>
                   </div>
                   <p className="text-sm font-semibold text-gray-900">{n.title}</p>
                   {n.message && <p className="text-sm text-gray-600 mt-0.5">{n.message}</p>}
