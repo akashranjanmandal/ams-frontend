@@ -1,14 +1,18 @@
 """Seed AMS database with initial data."""
 import asyncio
+from datetime import date, datetime, timezone
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+from app.core.config import settings
 from app.core.security import hash_password
 from app.models.user import User, UserRole, Department, Program
 from app.models.academic import AcademicCalendar, Semester
-from app.models.course import Course
+from app.models.course import Course, CourseOffering, OfferingFaculty
+from app.models.enrollment import StudentEnrollment
+from app.models import audit, enrollment, grading, research  # noqa: F401
 from app.db.base import Base
-from datetime import date
-
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/ams_db"
 
 DEPARTMENTS = [
     ("Agriculture & Veterinary Sciences", "AVS"),
@@ -62,10 +66,33 @@ COURSES = [
     ("EXT101", "Agricultural Extension",           "AGRO", 2, 0, "UG"),
 ]
 
+OFFERINGS = [
+    # (course_number, section, faculty_email, status, max_enrollment)
+    ("AGR101", "A", "faculty1@avfu.ac.in", "published", 60),
+    ("AGR102", "A", "faculty1@avfu.ac.in", "published", 55),
+    ("AGR201", "A", "faculty2@avfu.ac.in", "published", 50),
+    ("AGR301", "A", "hod.agro@avfu.ac.in", "published", 45),
+    ("STAT101", "A", "faculty3@avfu.ac.in", "published", 60),
+    ("VET101", "A", "faculty2@avfu.ac.in", "published", 40),
+    ("VET201", "A", "hod.vet@avfu.ac.in", "published", 40),
+    ("AGR501", "PG", "researcher1@avfu.ac.in", "published", 25),
+]
+
+ENROLLMENTS = [
+    # (student_email, course_number, status, remarks)
+    ("student1@avfu.ac.in", "AGR101", "pending", None),
+    ("student2@avfu.ac.in", "AGR101", "pending", None),
+    ("student3@avfu.ac.in", "AGR501", "pending", None),
+    ("student1@avfu.ac.in", "AGR102", "approved", "Approved from seed data."),
+    ("student2@avfu.ac.in", "AGR201", "approved", "Approved from seed data."),
+    ("student4@avfu.ac.in", "VET101", "pending", None),
+]
+
 
 async def seed():
-    engine = create_async_engine(DATABASE_URL, echo=True)
+    engine = create_async_engine(settings.DATABASE_URL, echo=True)
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     Session = async_sessionmaker(engine, expire_on_commit=False)
@@ -128,6 +155,7 @@ async def seed():
         db.add(sem1); db.add(sem2)
 
         # Courses
+        course_map = {}
         for num, title, dept_code, th, pr, level in COURSES:
             course_type = "both" if th > 0 and pr > 0 else ("practical" if pr > 0 else "theory")
             c = Course(
@@ -138,6 +166,45 @@ async def seed():
                 status="active",
             )
             db.add(c)
+            await db.flush()
+            course_map[num] = c.id
+
+        user_result = await db.execute(select(User))
+        user_map = {u.email: u for u in user_result.scalars().all()}
+
+        # Published course offerings for the active semester.
+        offering_map = {}
+        for course_number, section, faculty_email, status, max_enrollment in OFFERINGS:
+            offering = CourseOffering(
+                calendar_id=cal.id,
+                semester_id=sem1.id,
+                course_id=course_map[course_number],
+                max_enrollment=max_enrollment,
+                section=section,
+                status=status,
+                created_by=user_map["academic@avfu.ac.in"].id,
+            )
+            db.add(offering)
+            await db.flush()
+            offering_map[course_number] = offering.id
+
+            faculty = user_map.get(faculty_email)
+            if faculty:
+                db.add(OfferingFaculty(offering_id=offering.id, faculty_id=faculty.id, role="primary"))
+
+        # Sample enrollment requests and approvals for management screens.
+        processor = user_map["academic@avfu.ac.in"]
+        for student_email, course_number, status, remarks in ENROLLMENTS:
+            processed_at = datetime.now(timezone.utc) if status in ("approved", "rejected") else None
+            enrollment = StudentEnrollment(
+                student_id=user_map[student_email].id,
+                offering_id=offering_map[course_number],
+                status=status,
+                processed_by=processor.id if processed_at else None,
+                processed_at=processed_at,
+                remarks=remarks,
+            )
+            db.add(enrollment)
 
         await db.commit()
         print("AMS seed completed successfully.")
