@@ -7,8 +7,10 @@ interface AuthUser {
   email: string;
   full_name: string;
   role: string;
-  designation: string | null;
-  department_id: string | null;
+  roll_no?: string | null;
+  designation?: string | null;
+  department?: string | null;
+  department_id?: string | null;
 }
 
 interface AuthState {
@@ -17,6 +19,7 @@ interface AuthState {
   refresh_token: string | null;
   setAuth: (user: AuthUser, access_token: string, refresh_token: string) => void;
   clearAuth: () => void;
+  setRole?: (role: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -27,11 +30,12 @@ export const useAuthStore = create<AuthState>()(
       refresh_token: null,
       setAuth: (user, access_token, refresh_token) => set({ user, access_token, refresh_token }),
       clearAuth: () => set({ user: null, access_token: null, refresh_token: null }),
+      setRole: (role: string) => set((state) => ({ ...state, user: state.user ? { ...state.user, role } : state.user })),
     }),
     { name: "ams-auth" }
   )
 );
 
 export const useUser = () => useAuthStore((s) => s.user);
-export const useRole = () => useAuthStore((s) => s.user?.role ?? null);
+export const useRole = () => useAuthStore((s) => s.user?.role?.toLowerCase() ?? null);
 export const useIsLoggedIn = () => useAuthStore((s) => !!s.user);

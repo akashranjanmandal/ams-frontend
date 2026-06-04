@@ -8,3 +8,5 @@ ams.db
 __pycache__
 alembic.ini
 backend/.env
+venv/
+venv
