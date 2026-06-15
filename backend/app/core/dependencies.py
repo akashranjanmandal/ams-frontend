@@ -60,7 +60,7 @@ async def require_kyc(
 
 def require_roles(*roles: SystemRole):
     async def role_checker(current_user: User = Depends(require_kyc)) -> User:
-        user_roles = {r.role for r in current_user.roles if r.is_active}
+        user_roles = {r.role for r in current_user.roles}
         if not any(r in user_roles for r in roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

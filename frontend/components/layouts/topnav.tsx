@@ -21,7 +21,7 @@ export function EFMSTopNav({ sidebarWidth }: { sidebarWidth: number }) {
   const router = useRouter();
   const user = useUser();
   const activeRole = useActiveRole();
-  const { clearAuth } = useAuthStore();
+  const { clearAuth, refreshToken } = useAuthStore();
   const qc = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -40,7 +40,7 @@ export function EFMSTopNav({ sidebarWidth }: { sidebarWidth: number }) {
   });
 
   const handleLogout = async () => {
-    try { await api.post("/auth/logout"); } catch { }
+    try { await api.post("/auth/logout", { refresh_token: refreshToken }); } catch { }
     clearAuth();
     router.replace("/login");
   };

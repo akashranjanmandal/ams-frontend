@@ -174,7 +174,7 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
         </div>
         {selectedPdf && (
           <div className="p-3 border-t border-gray-200">
-            <a href={`http://localhost:8000/uploads/${selectedPdf.stored_name}`} target="_blank" rel="noreferrer"
+            <a href={`http://localhost:8001/uploads/${selectedPdf.stored_name}`} target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#0D6E6E] text-white rounded-xl text-sm font-semibold hover:bg-[#178F8F]">
               <Download size={15} /> Download PDF
             </a>
@@ -471,7 +471,7 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
                     </div>
                   ) : (
                     <PdfSignatureCanvas
-                      pdfUrl={`http://localhost:8000/uploads/${selectedPdf?.stored_name ?? file.attachments[0].stored_name}`}
+                      pdfUrl={`http://localhost:8001/uploads/${selectedPdf?.stored_name ?? file.attachments[0].stored_name}`}
                       existingSignatures={(file.signatures ?? []).map((s) => ({ ...s, status: s.status as "pending" | "verified", verified_at: s.verified_at ?? undefined }))}
                       onPlace={(pos_x, pos_y) => {
                         setPendingStamp({ pos_x, pos_y });
