@@ -178,8 +178,10 @@ async def search_files(
 
 @router.get("/{file_id}/track")
 async def track_file(file_id: UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_verified_user)):
-    """Returns enriched route history: who forwarded to whom (no timestamps shown in UI)."""
+    """Returns enriched route history (forwarding chain + signature events), timestamped."""
     from app.models.efms import RouteEntry
+    from app.models.efms_extra import FileRemark
+
     result = await db.execute(
         select(RouteEntry).where(RouteEntry.file_id == file_id).order_by(RouteEntry.created_at)
     )
@@ -190,6 +192,7 @@ async def track_file(file_id: UUID, db: AsyncSession = Depends(get_db), user: Us
         to_u   = await db.get(User, e.to_user_id)   if e.to_user_id   else None
         out.append({
             "id":             str(e.id),
+            "type":           "route",
             "action":         e.action.value if hasattr(e.action, "value") else str(e.action),
             "from_user_id":   str(e.from_user_id) if e.from_user_id else None,
             "to_user_id":     str(e.to_user_id)   if e.to_user_id   else None,
@@ -199,6 +202,26 @@ async def track_file(file_id: UUID, db: AsyncSession = Depends(get_db), user: Us
             "is_current":     e.is_current,
             "created_at":     e.created_at.isoformat() if e.created_at else None,
         })
+
+    remark_result = await db.execute(
+        select(FileRemark).where(FileRemark.file_id == file_id).order_by(FileRemark.created_at)
+    )
+    for r in remark_result.scalars().all():
+        ru = await db.get(User, r.user_id) if r.user_id else None
+        out.append({
+            "id":             str(r.id),
+            "type":           "sign",
+            "action":         "sign",
+            "from_user_id":   str(r.user_id) if r.user_id else None,
+            "to_user_id":     None,
+            "from_user_name": ru.full_name if ru else "System",
+            "to_user_name":   None,
+            "remarks":        r.remark,
+            "is_current":     False,
+            "created_at":     r.created_at.isoformat() if r.created_at else None,
+        })
+
+    out.sort(key=lambda x: x["created_at"] or "")
     return out
 
 
@@ -589,6 +612,19 @@ async def initiate_sign(
         raise HTTPException(status_code=403, detail="You can only sign a file that is currently forwarded to you.")
 
     from app.models.efms_extra import FileSignature
+
+    existing = await db.execute(
+        select(FileSignature).where(FileSignature.file_id == file_id, FileSignature.user_id == user.id)
+    )
+    existing_sigs = existing.scalars().all()
+    if any(s.status == "verified" for s in existing_sigs):
+        raise HTTPException(status_code=400, detail="You have already signed this document.")
+
+    # Drop any stale pending placements from this user before placing a new one
+    for s in existing_sigs:
+        if s.status == "pending":
+            await db.delete(s)
+
     sig = FileSignature(
         file_id=file_id,
         user_id=user.id,
@@ -642,12 +678,81 @@ async def verify_sign(
     await db.refresh(sig)
 
     signer = await db.get(User, sig.user_id)
+    signer_label = signer.full_name if signer and signer.full_name else (signer.email if signer else user.email)
+
+    await _create_signed_copy_and_track(db, file_id, sig, signer_label, user)
+
     return SignatureOut(
         id=sig.id, file_id=sig.file_id, user_id=sig.user_id,
         signer_name=signer.full_name if signer else "",
         pos_x=sig.pos_x, pos_y=sig.pos_y, page_number=sig.page_number,
         status=sig.status, signed_at=sig.signed_at, verified_at=sig.verified_at,
     )
+
+
+async def _create_signed_copy_and_track(db: AsyncSession, file_id: UUID, sig, signer_label: str, user: User) -> None:
+    """After a signature is OTP-verified: stamp a signed copy of the original
+    attachment, surface it under "Files attached", and record a tracking
+    entry so it shows up in the file's Track Status history."""
+    from app.models.efms_extra import FileRemark
+    from app.utils.signing import generate_signed_copy
+
+    att_result = await db.execute(
+        select(FileAttachment).where(FileAttachment.file_id == file_id).order_by(FileAttachment.created_at)
+    )
+    attachments = att_result.scalars().all()
+    source = attachments[0] if attachments else None
+
+    if source:
+        upload_dir = os.path.abspath(settings.UPLOAD_DIR)
+        src_path = os.path.join(upload_dir, source.stored_name)
+        ext = _get_ext(source.original_name) or _get_ext(source.stored_name)
+        base_name = os.path.splitext(source.original_name)[0]
+        signed_display_name = f"{base_name}_signed{ext}"
+
+        try:
+            async with aiofiles.open(src_path, "rb") as fh:
+                content = await fh.read()
+
+            signed_bytes = generate_signed_copy(
+                content, ext,
+                pos_x=sig.pos_x, pos_y=sig.pos_y, page_number=sig.page_number,
+                signer_name=signer_label, timestamp=sig.verified_at,
+            )
+
+            new_stored_name = f"{_uuid.uuid4()}{ext}"
+            dest = os.path.join(upload_dir, new_stored_name)
+            async with aiofiles.open(dest, "wb") as out:
+                await out.write(signed_bytes)
+
+            existing_signed = next((a for a in attachments if a.original_name == signed_display_name), None)
+            if existing_signed:
+                old_path = os.path.join(upload_dir, existing_signed.stored_name)
+                if os.path.exists(old_path):
+                    try:
+                        os.remove(old_path)
+                    except OSError:
+                        pass
+                existing_signed.stored_name = new_stored_name
+                existing_signed.file_size = len(signed_bytes)
+            else:
+                db.add(FileAttachment(
+                    file_id=file_id,
+                    original_name=signed_display_name,
+                    stored_name=new_stored_name,
+                    file_size=len(signed_bytes),
+                    mime_type=source.mime_type,
+                    uploaded_by=user.id,
+                ))
+        except (OSError, ValueError):
+            pass  # Original missing or unsupported file type — skip generating a stamped copy
+
+        db.add(FileRemark(
+            file_id=file_id,
+            user_id=user.id,
+            remark=f"{source.original_name} signed by {signer_label}",
+        ))
+        await db.commit()
 
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────

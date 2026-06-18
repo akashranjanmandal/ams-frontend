@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(
   date: string | Date,
-  format: "short" | "long" | "relative" = "short"
+  format: "short" | "long" | "relative" | "datetime" = "short"
 ): string {
   const d = new Date(date);
   if (isNaN(d.getTime())) return "—";
@@ -27,6 +27,10 @@ export function formatDate(
 
   if (format === "long") {
     return d.toLocaleString("en-IN", { ...IST, day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  if (format === "datetime") {
+    return d.toLocaleString("en-IN", { ...IST, day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
   return d.toLocaleDateString("en-IN", { ...IST, day: "2-digit", month: "short", year: "numeric" });

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/services/api";
+import { api, FILES_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
 import { useUser, useActiveRole } from "@/stores/auth.store";
 import { cn, formatDate } from "@/lib/utils";
@@ -16,7 +16,7 @@ import PdfSignatureCanvas, { type SignatureStamp } from "@/components/signature/
 import OtpVerifyModal from "@/components/signature/otp-verify-modal";
 
 interface RouteEntry { id: string; from_user_id: string | null; to_user_id: string | null; action: string; remarks: string | null; is_current: boolean; created_at: string; }
-interface TrackEntry { id: string; from_user_id: string | null; to_user_id: string | null; from_user_name: string | null; to_user_name: string | null; action: string; remarks: string | null; is_current: boolean; created_at: string; }
+interface TrackEntry { id: string; type?: "route" | "sign"; from_user_id: string | null; to_user_id: string | null; from_user_name: string | null; to_user_name: string | null; action: string; remarks: string | null; is_current: boolean; created_at: string; }
 interface Attachment { id: string; original_name: string; file_size: number | null; mime_type: string | null; stored_name: string; created_at: string; }
 interface Notesheet { id: string; content: string; version: number; is_locked: boolean; }
 interface Signature { id: string; file_id: string; user_id: string; signer_name: string; pos_x: number; pos_y: number; page_number: number; status: "pending" | "verified"; signed_at: string | null; verified_at: string | null; }
@@ -174,7 +174,7 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
         </div>
         {selectedPdf && (
           <div className="p-3 border-t border-gray-200">
-            <a href={`http://localhost:8001/uploads/${selectedPdf.stored_name}`} target="_blank" rel="noreferrer"
+            <a href={`${FILES_BASE_URL}/uploads/${selectedPdf.stored_name}`} target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#0D6E6E] text-white rounded-xl text-sm font-semibold hover:bg-[#178F8F]">
               <Download size={15} /> Download PDF
             </a>
@@ -390,25 +390,40 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
                         <div key={entry.id} className="flex items-start gap-4">
                           <div className="flex flex-col items-center">
                             <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2",
+                              entry.type === "sign"      ? "bg-emerald-600 border-emerald-600" :
                               entry.action === "approve" ? "bg-green-500 border-green-500" :
                               entry.action === "reject"  ? "bg-red-500 border-red-500" :
                                                           "bg-[#0D6E6E] border-[#0D6E6E]")}>
-                              {entry.action === "approve" ? <CheckCircle2 size={16} className="text-white" /> :
+                              {entry.type === "sign"      ? <PenLine size={16} className="text-white" /> :
+                               entry.action === "approve" ? <CheckCircle2 size={16} className="text-white" /> :
                                entry.action === "reject"  ? <XCircle size={16} className="text-white" /> :
                                                             <ArrowRight size={16} className="text-white" />}
                             </div>
                             {i < trackEntries.length - 1 && <div className="w-0.5 h-10 mt-1 bg-gray-200" />}
                           </div>
                           <div className="flex-1 pb-6">
-                            <p className="text-base font-bold text-gray-900 capitalize">{entry.action.replace("_"," ")}</p>
-                            <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                              <span className="font-medium">{entry.from_user_name ?? "System"}</span>
-                              {entry.to_user_name && <>
-                                <ArrowRight size={13} className="text-gray-400 shrink-0" />
-                                <span className="font-medium">{entry.to_user_name}</span>
-                              </>}
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-base font-bold text-gray-900 capitalize">
+                                {entry.type === "sign" ? "Document Signed" : entry.action.replace("_"," ")}
+                              </p>
+                              {entry.created_at && (
+                                <span className="text-xs text-gray-400 shrink-0">{formatDate(entry.created_at, "datetime")}</span>
+                              )}
                             </div>
-                            {entry.remarks && <p className="text-sm text-gray-500 mt-1 italic">&ldquo;{entry.remarks}&rdquo;</p>}
+                            {entry.type === "sign" ? (
+                              <p className="text-sm text-gray-600 mt-1">{entry.remarks}</p>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                                  <span className="font-medium">{entry.from_user_name ?? "System"}</span>
+                                  {entry.to_user_name && <>
+                                    <ArrowRight size={13} className="text-gray-400 shrink-0" />
+                                    <span className="font-medium">{entry.to_user_name}</span>
+                                  </>}
+                                </div>
+                                {entry.remarks && <p className="text-sm text-gray-500 mt-1 italic">&ldquo;{entry.remarks}&rdquo;</p>}
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -462,26 +477,35 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
                   )}
                 </div>
 
-                {/* PDF canvas with overlay */}
+                {/* Document canvas with overlay */}
                 <div className="p-4">
-                  {file.attachments.length === 0 ? (
-                    <div className="text-center py-16 text-gray-400">
-                      <FileText size={40} className="mx-auto mb-3 opacity-40" />
-                      <p>No attachments found. Attach a PDF to this file first.</p>
-                    </div>
-                  ) : (
-                    <PdfSignatureCanvas
-                      pdfUrl={`http://localhost:8001/uploads/${selectedPdf?.stored_name ?? file.attachments[0].stored_name}`}
-                      existingSignatures={(file.signatures ?? []).map((s) => ({ ...s, status: s.status as "pending" | "verified", verified_at: s.verified_at ?? undefined }))}
-                      onPlace={(pos_x, pos_y) => {
-                        setPendingStamp({ pos_x, pos_y });
-                        setShowOtpModal(false);
-                        setPendingSignatureId(null);
-                      }}
-                      pendingStamp={pendingStamp}
-                      onClearPending={() => { setPendingStamp(null); setPendingSignatureId(null); }}
-                    />
-                  )}
+                  {(() => {
+                    const signTarget = selectedPdf ?? file.attachments[0];
+
+                    if (!signTarget) {
+                      return (
+                        <div className="text-center py-16 text-gray-400">
+                          <FileText size={40} className="mx-auto mb-3 opacity-40" />
+                          <p>No attachments found. Attach a document to this file first.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <PdfSignatureCanvas
+                        fileUrl={`${FILES_BASE_URL}/uploads/${signTarget.stored_name}`}
+                        mimeType={signTarget.mime_type}
+                        existingSignatures={(file.signatures ?? []).map((s) => ({ ...s, status: s.status as "pending" | "verified", verified_at: s.verified_at ?? undefined }))}
+                        onPlace={(pos_x, pos_y) => {
+                          setPendingStamp({ pos_x, pos_y });
+                          setShowOtpModal(false);
+                          setPendingSignatureId(null);
+                        }}
+                        pendingStamp={pendingStamp}
+                        onClearPending={() => { setPendingStamp(null); setPendingSignatureId(null); }}
+                      />
+                    );
+                  })()}
                 </div>
 
                 {/* Existing signatures list */}
@@ -508,9 +532,9 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
                             sig.status === "verified" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
                             {sig.status === "verified" ? "✓ Verified" : "? Pending"}
                           </span>
-                          {sig.verified_at && (
-                            <span className="text-xs text-gray-400">{formatDate(sig.verified_at, "relative")}</span>
-                          )}
+                          <span className="text-xs text-gray-400">
+                            {formatDate(sig.verified_at ?? sig.signed_at ?? "", "datetime")}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -543,6 +567,7 @@ export function NotesheetPage({ fileId }: { fileId: string }) {
               setPendingStamp(null);
               setPendingSignatureId(null);
               qc.invalidateQueries({ queryKey: ["efms-file", fileId] });
+              qc.invalidateQueries({ queryKey: ["file-track", fileId] });
             } catch (err) {
               const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
               setOtpError(msg ?? "Invalid OTP. Please try again.");

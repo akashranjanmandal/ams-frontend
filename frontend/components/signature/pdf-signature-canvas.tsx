@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
-import { CheckCircle, HelpCircle, X, Move } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { CheckCircle, HelpCircle, X, Loader2, AlertCircle } from "lucide-react";
 
 export interface SignatureStamp {
   id?: string;
@@ -13,7 +13,9 @@ export interface SignatureStamp {
 }
 
 interface Props {
-  pdfUrl: string;
+  fileUrl: string;
+  /** MIME type (or filename) of the document — used to decide how to render it */
+  mimeType?: string | null;
   existingSignatures: SignatureStamp[];
   /** Called when user clicks to place a new stamp (returns percent position) */
   onPlace: (pos_x: number, pos_y: number) => void;
@@ -23,8 +25,14 @@ interface Props {
   readOnly?: boolean;
 }
 
+function isWordDocument(fileUrl: string, mimeType?: string | null): boolean {
+  if (mimeType?.includes("wordprocessingml") || mimeType === "application/msword") return true;
+  return /\.docx?$/i.test(fileUrl);
+}
+
 export default function PdfSignatureCanvas({
-  pdfUrl,
+  fileUrl,
+  mimeType,
   existingSignatures,
   onPlace,
   pendingStamp,
@@ -32,8 +40,46 @@ export default function PdfSignatureCanvas({
   readOnly = false,
 }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const docxContainerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [dragPos, setDragPos] = useState<{ pos_x: number; pos_y: number } | null>(null);
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
+
+  const isDocx = isWordDocument(fileUrl, mimeType);
+
+  useEffect(() => {
+    if (!isDocx) return;
+    const container = docxContainerRef.current;
+    if (!container) return;
+
+    let cancelled = false;
+    setDocxLoading(true);
+    setDocxError(null);
+    container.innerHTML = "";
+
+    (async () => {
+      try {
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error(`Failed to load document (${res.status})`);
+        const blob = await res.blob();
+        if (cancelled) return;
+        const { renderAsync } = await import("docx-preview");
+        await renderAsync(blob, container, undefined, {
+          className: "docx-render",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+        });
+      } catch (err) {
+        if (!cancelled) setDocxError(err instanceof Error ? err.message : "Failed to render document.");
+      } finally {
+        if (!cancelled) setDocxLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isDocx, fileUrl]);
 
   const toPercent = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = overlayRef.current?.getBoundingClientRect();
@@ -71,67 +117,96 @@ export default function PdfSignatureCanvas({
 
   const activeStamp = dragging && dragPos ? dragPos : pendingStamp;
 
+  const overlayClass = `absolute inset-0 ${readOnly ? "pointer-events-none" : "cursor-crosshair"}`;
+  const overlayHandlers = {
+    onClick: handleClick,
+    onMouseMove: handleDragMove,
+    onMouseUp: handleDragEnd,
+    onMouseLeave: () => { if (dragging) { setDragging(false); setDragPos(null); } },
+  };
+
+  const stampsContent = (
+    <>
+      {/* Existing verified/pending signature stamps */}
+      {existingSignatures.map((sig) => (
+        <SignStamp key={sig.id} stamp={sig} onDragStart={undefined} />
+      ))}
+
+      {/* Pending stamp being placed */}
+      {activeStamp && (
+        <div
+          style={{ left: `${activeStamp.pos_x}%`, top: `${activeStamp.pos_y}%` }}
+          className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
+        >
+          <div className="relative flex flex-col items-center gap-1">
+            <div
+              className="w-11 h-11 rounded-full bg-amber-500/20 border-2 border-amber-400 border-dashed flex items-center justify-center shadow-lg animate-pulse cursor-move"
+              onMouseDown={handleDragStart}
+              title="Drag to reposition"
+            >
+              <HelpCircle className="w-6 h-6 text-amber-400" />
+            </div>
+            <span className="text-[10px] text-amber-300 bg-zinc-900/90 px-1 rounded whitespace-nowrap">
+              Pending — drag to reposition
+            </span>
+            {!readOnly && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onClearPending(); }}
+                className="absolute -top-2 -right-3 w-4 h-4 rounded-full bg-zinc-700 flex items-center justify-center hover:bg-red-600"
+                title="Remove stamp"
+              >
+                <X className="w-2.5 h-2.5 text-white" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="relative w-full rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 select-none">
-      {/* PDF viewer */}
-      <iframe
-        src={pdfUrl}
-        className="w-full"
-        style={{ height: "70vh", border: "none" }}
-        title="Document"
-      />
-
-      {/* Transparent click overlay */}
-      <div
-        ref={overlayRef}
-        className={`absolute inset-0 ${readOnly ? "pointer-events-none" : "cursor-crosshair"}`}
-        onClick={handleClick}
-        onMouseMove={handleDragMove}
-        onMouseUp={handleDragEnd}
-        onMouseLeave={() => { if (dragging) { setDragging(false); setDragPos(null); } }}
-      >
-        {/* Existing verified/pending signature stamps */}
-        {existingSignatures.map((sig) => (
-          <SignStamp
-            key={sig.id}
-            stamp={sig}
-            onDragStart={undefined}
-          />
-        ))}
-
-        {/* Pending stamp being placed */}
-        {activeStamp && (
-          <div
-            style={{ left: `${activeStamp.pos_x}%`, top: `${activeStamp.pos_y}%` }}
-            className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
-          >
-            <div className="relative flex flex-col items-center gap-1">
-              <div
-                className="w-11 h-11 rounded-full bg-amber-500/20 border-2 border-amber-400 border-dashed flex items-center justify-center shadow-lg animate-pulse cursor-move"
-                onMouseDown={handleDragStart}
-                title="Drag to reposition"
-              >
-                <HelpCircle className="w-6 h-6 text-amber-400" />
-              </div>
-              <span className="text-[10px] text-amber-300 bg-zinc-900/90 px-1 rounded whitespace-nowrap">
-                Pending — drag to reposition
-              </span>
-              {!readOnly && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onClearPending(); }}
-                  className="absolute -top-2 -right-3 w-4 h-4 rounded-full bg-zinc-700 flex items-center justify-center hover:bg-red-600"
-                  title="Remove stamp"
-                >
-                  <X className="w-2.5 h-2.5 text-white" />
-                </button>
-              )}
+      {isDocx ? (
+        <div className="w-full overflow-auto bg-white" style={{ height: "70vh" }}>
+          {/* Content wrapper sizes to the rendered document; overlay matches it so
+              stamps stay anchored to their position in the document while scrolling */}
+          <div className="relative">
+            <div ref={docxContainerRef} className="docx-render-host" />
+            <div ref={overlayRef} className={overlayClass} {...overlayHandlers}>
+              {stampsContent}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          {/* PDF viewer */}
+          <iframe
+            src={fileUrl}
+            className="w-full"
+            style={{ height: "70vh", border: "none" }}
+            title="Document"
+          />
+          {/* Transparent click overlay */}
+          <div ref={overlayRef} className={overlayClass} {...overlayHandlers}>
+            {stampsContent}
+          </div>
+        </>
+      )}
+
+      {isDocx && docxLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 text-zinc-300 gap-2 text-sm pointer-events-none">
+          <Loader2 className="w-4 h-4 animate-spin" /> Rendering document…
+        </div>
+      )}
+      {isDocx && docxError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 text-zinc-300 gap-2 text-sm px-6 text-center pointer-events-none">
+          <AlertCircle className="w-6 h-6 text-red-400" />
+          {docxError}
+        </div>
+      )}
 
       {!readOnly && !pendingStamp && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-zinc-400 bg-zinc-900/80 px-3 py-1 rounded-full pointer-events-none">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-zinc-400 bg-zinc-900/80 px-3 py-1 rounded-full pointer-events-none z-30">
           Click anywhere on the document to place your signature
         </div>
       )}
