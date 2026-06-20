@@ -1,7 +1,7 @@
 """Extra eFMS models: OTP, Docket, FileRemark, FileSignature."""
 import uuid
 from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime, Float, Integer, func
-from sqlalchemy.dialects.postgresql import UUID
+from app.db.base import UUID
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 

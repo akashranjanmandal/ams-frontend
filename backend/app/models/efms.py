@@ -5,7 +5,8 @@ from sqlalchemy import (
     Enum as PgEnum, Index, DateTime,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+# from sqlalchemy.dialects.postgresql import JSONB, UUID
+from app.db.base import JSONB, UUID
 from app.db.base import Base, UUIDMixin, TimestampMixin
 
 

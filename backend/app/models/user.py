@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, Boolean, Enum, ForeignKey, Date, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+# from sqlalchemy.dialects.postgresql import UUID
+from app.db.base import UUID
 import enum
 from app.db.base import Base, TimestampMixin, UUIDMixin
 

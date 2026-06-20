@@ -15,6 +15,7 @@ import app.models.efms          # noqa: F401
 import app.models.audit         # noqa: F401
 import app.models.admin         # noqa: F401
 import app.models.efms_extra    # noqa: F401
+from app.db.base import Base, engine
 from app.core.exceptions import (
     AppException, app_exception_handler,
     validation_exception_handler, generic_exception_handler
@@ -33,10 +34,28 @@ structlog.configure(
 logger = structlog.get_logger()
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     logger.info("AVFU eFMS API starting", version=settings.APP_VERSION, env=settings.ENVIRONMENT)
+#     yield
+#     logger.info("AVFU eFMS API shutting down")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("AVFU eFMS API starting", version=settings.APP_VERSION, env=settings.ENVIRONMENT)
+
+    logger.info(
+        "AVFU eFMS API starting",
+        version=settings.APP_VERSION,
+        env=settings.ENVIRONMENT,
+    )
+
+    # Create all tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    logger.info("Database tables created")
+
     yield
+
     logger.info("AVFU eFMS API shutting down")
 
 

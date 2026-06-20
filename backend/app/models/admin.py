@@ -1,7 +1,7 @@
 """Super-admin managed lookup tables and notifications."""
 import uuid
 from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
+from app.db.base import UUID
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
